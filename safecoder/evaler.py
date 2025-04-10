@@ -318,7 +318,6 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
             return None
 
         code_block = max(code_blocks, key=len)
-        code_block = self.postprocess(code_block, info)
 
         return code_block
 
