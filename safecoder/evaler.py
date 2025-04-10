@@ -3,6 +3,10 @@ import re
 import abc
 import openai
 import numpy as np
+import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from tqdm import tqdm
 
 from .utils import load_model, set_seed, try_parse
 from .constants import PROMPT_NO_INPUT, INSTRUCTION, LANGUAGE_MAPS, PRETRAINED_MODELS
@@ -243,6 +247,95 @@ class EvalerOpenAI(EvalerBase):
                 completion = choice.text
                 completion = self.postprocess(completion, info)
                 srcs.append(file_context+func_context+completion)
+
+        output_srcs, non_parsed_srcs = [], []
+        for src in srcs:
+            if info['language'] != 'go' and try_parse(src, info) != 0:
+                non_parsed_srcs.append(src)
+            else:
+                output_srcs.append(src)
+
+        return output_srcs, non_parsed_srcs
+    
+
+class EvalerMyReasoner(EvalerBase):
+    def __init__(self, args):
+        self.system_prompt = """You are a helpful assistant. A conversation between User and Assistant. The user asks a question, and the Assistant solves it.
+The assistant first thinks about the reasoning process in the mind and then provides the user with the answer.
+The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively.
+At the same time, please wrap the generated code in markdown code blocks ``` ```.
+i.e., <think> reasoning process here </think><answer> answer here ``` code here ``` </answer>"""
+        self.user_template = "Please complete the code according to the task description and the provided code snippet.\n# Task description:\n\n{description}\n\n# Code snippet:\n\n```{language}\n{snippet}\n```"
+        self.args = args
+        self.model = args.model_name
+        self.client = openai.OpenAI(api_key=args.token, base_url=args.api_base)
+
+    def _extract_markdown(self, md):
+        pattern = r'```.*?\n(.*?)```'
+        matches = re.findall(pattern, md, re.DOTALL)
+        return matches
+
+    def _query_model(self, user_message: str) -> tuple[str, str]:
+        completion = self.client.chat.completions.create(
+            model=self.args.model_name,
+            messages=[{"role": "user", "content": user_message}],
+            temperature=self.args.temperature,
+            max_tokens=self.args.max_completion_tokens,
+            max_completion_tokens=self.args.max_completion_tokens,
+            stream=True
+        )
+
+        think_content = ""
+        answer_content = ""
+
+        for chunk in completion:
+            if not chunk.choices:
+                continue
+
+            delta = chunk.choices[0].delta
+            if hasattr(delta, "reasoning_content") and delta.reasoning_content != None:
+                think_content += delta.reasoning_content
+            elif hasattr(delta, "content") and delta.content != None:
+                answer_content += delta.content
+
+        return think_content, answer_content
+
+    def _sample_one(self, prompt: str, info) -> tuple[str, str] | None:
+        try:
+            _, answer_content = self._query_model(prompt)
+        except Exception as e:
+            print(f"Error querying model: {e}")
+            traceback.print_exc()
+            return None
+
+        if answer_content == "":
+            print("Empty answer content")
+            return None
+
+        code_blocks = self._extract_markdown(answer_content)
+        if len(code_blocks) == 0:
+            print("No code blocks found")
+            return None
+
+        code_block = max(code_blocks, key=len)
+        code_block = self.postprocess(code_block, info)
+
+        return code_block
+
+    def sample(self, file_context, func_context, info):
+        lang = info['language']
+
+        prompt = self.user_template.format_map({'description': info['description'], 'snippet': file_context + func_context, 'language': lang})
+
+        srcs = []
+        with ThreadPoolExecutor(max_workers=self.args.max_workers) as executor:
+            futures = [executor.submit(self._sample_one, prompt, info) for _ in range(self.args.num_samples)]
+            with tqdm(total=len(futures), dynamic_ncols=True) as pbar:
+                for future in as_completed(futures):
+                    res = future.result()
+                    if res is not None:
+                        srcs.append(res)
+                    pbar.update(1)
 
         output_srcs, non_parsed_srcs = [], []
         for src in srcs:

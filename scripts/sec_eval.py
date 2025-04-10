@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 from safecoder.utils import set_logging, set_seed, get_cp_args
 from safecoder.constants import PRETRAINED_MODELS, CHAT_MODELS, CWES_TRAINED, NEW_EVALS, NOT_TRAINED
-from safecoder.evaler import EvalerCodePLM, EvalerCodeFT, EvalerOpenAI, EvalerChat
+from safecoder.evaler import EvalerCodePLM, EvalerCodeFT, EvalerOpenAI, EvalerChat, EvalerMyReasoner
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -22,7 +22,7 @@ def get_args():
     parser.add_argument('--sec_prompting', type=str, choices=['none', 'generic', 'specific'], default='none')
     parser.add_argument('--vul_type', type=str, default=None)
 
-    parser.add_argument('--num_samples', type=int, default=100)
+    parser.add_argument('--num-samples', type=int, default=100)
     parser.add_argument('--num_samples_per_gen', type=int, default=20)
     parser.add_argument('--temp', type=float, default=0.4)
     parser.add_argument('--max_gen_len', type=int, default=256)
@@ -33,9 +33,19 @@ def get_args():
     parser.add_argument('--model_dir', type=str, default='../trained')
 
     parser.add_argument('--seed', type=int, default=1)
+
+    # MyResoner specific arguments
+    parser.add_argument('--use-my-reasoner', action='store_true')
+    parser.add_argument('--api-base', type=str, default='http://127.0.0.1:9997/v1')
+    parser.add_argument('--token', type=str, default='none')
+    parser.add_argument('--temperature', type=float, default=0.6)
+    parser.add_argument('--max-completion-tokens', type=int, default=16384)
+    parser.add_argument("--max-workers", type=int, default=8)
+
     args = parser.parse_args()
 
-    assert args.num_samples % args.num_samples_per_gen == 0
+    if not args.use_my_reasoner:
+        assert args.num_samples % args.num_samples_per_gen == 0
     if args.model_name in ('octocoder', 'llama2-13b-chat', 'codellama-13b-chat'):
         args.num_samples_per_gen = 10
     args.output_dir = os.path.join(args.experiments_dir, args.output_name, args.eval_type)
@@ -229,7 +239,9 @@ def main():
     set_seed(args.seed)
     args.logger.info(f'args: {args}')
 
-    if args.model_name in CHAT_MODELS:
+    if args.use_my_reasoner:
+        evaler = EvalerMyReasoner(args)
+    elif args.model_name in CHAT_MODELS:
         evaler = EvalerChat(args)
     elif args.model_name in PRETRAINED_MODELS:
         evaler = EvalerCodePLM(args)
