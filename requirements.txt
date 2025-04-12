@@ -1,6 +1,5 @@
---extra-index-url https://download.pytorch.org/whl/cu118
-torch==2.0.1
-transformers==4.37.1
+torch
+transformers
 accelerate
 termcolor
 yamlize

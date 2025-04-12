@@ -29,6 +29,10 @@ Our evaluation covers various benchmarks concerning security and utility. To eva
 python sec_eval.py --output_name starcoderbase-1b-safecoder --model_name starcoderbase-1b-safecoder --eval_type trained
 python sec_eval.py --output_name starcoderbase-1b-safecoder --model_name starcoderbase-1b-safecoder --eval_type trained-new
 python print_results.py --eval_name starcoderbase-1b-safecoder --eval_type trained-joint --detail
+
+python sec_eval.py --output_name QwQ-32B --model_name QwQ-32B --eval_type trained --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python sec_eval.py --output_name QwQ-32B --model_name QwQ-32B --eval_type trained-new --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python print_results.py --eval_name QwQ-32B --eval_type trained-joint --detail
 ```
 
 For utility, we consider the following benchmarks:
