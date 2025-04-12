@@ -276,9 +276,14 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
         return matches
 
     def _query_model(self, user_message: str) -> tuple[str, str]:
+        messages = []
+        if self.args.use_system_prompt:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": user_message})
+
         completion = self.client.chat.completions.create(
             model=self.args.model_name,
-            messages=[{"role": "user", "content": user_message}],
+            messages=messages,
             temperature=self.args.temperature,
             max_tokens=self.args.max_completion_tokens,
             max_completion_tokens=self.args.max_completion_tokens,
