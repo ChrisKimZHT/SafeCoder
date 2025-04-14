@@ -24,15 +24,25 @@ python train.py --pretrain_name starcoderbase-1b --output_name starcoderbase-1b-
 Here, `--pretrain_name` specifies the base pretrained LLM, `--output_name` denotes the user-provided name of the fine-tuned model, and `--datasets` represents a list of datasets used for training (see [the datasets section](#datasets) for more details). We also provide fine-tuned versions of Mistral-7B ([link](https://files.sri.inf.ethz.ch/safecoder/mistral-7b-lora-safecoder.tar.gz)) and CodeLlama-7B ([link](https://files.sri.inf.ethz.ch/safecoder/codellama-7b-lora-safecoder.tar.gz)), such that the user does not necessarily need to perform fine-tuning by themselves.
 
 ## Evaluation
+
+My Reasoner Model:
+```console
+python sec_eval.py --output_name qwq-32b --model_name QwQ-32B --eval_type trained --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python sec_eval.py --output_name qwq-32b --model_name QwQ-32B --eval_type trained-new --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python print_results.py --eval_name qwq-32b --eval_type trained-joint --detail
+
+python func_eval_gen.py --eval_type human_eval --output_name qwq-32b --model_name QwQ-32B --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python print_results.py --eval_name qwq-32b --eval_type human_eval
+
+python func_eval_gen.py --eval_type mbpp --output_name qwq-32b --model_name QwQ-32B --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
+python print_results.py --eval_name qwq-32b --eval_type mbpp
+```
+
 Our evaluation covers various benchmarks concerning security and utility. To evaluate the security of generated code, run the following commands:
 ```console
 python sec_eval.py --output_name starcoderbase-1b-safecoder --model_name starcoderbase-1b-safecoder --eval_type trained
 python sec_eval.py --output_name starcoderbase-1b-safecoder --model_name starcoderbase-1b-safecoder --eval_type trained-new
 python print_results.py --eval_name starcoderbase-1b-safecoder --eval_type trained-joint --detail
-
-python sec_eval.py --output_name QwQ-32B --model_name QwQ-32B --eval_type trained --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
-python sec_eval.py --output_name QwQ-32B --model_name QwQ-32B --eval_type trained-new --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
-python print_results.py --eval_name QwQ-32B --eval_type trained-joint --detail
 ```
 
 For utility, we consider the following benchmarks:
