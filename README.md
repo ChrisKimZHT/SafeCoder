@@ -28,8 +28,7 @@ Here, `--pretrain_name` specifies the base pretrained LLM, `--output_name` denot
 My Reasoner Model:
 ```console
 python sec_eval.py --output_name qwq-32b --model_name QwQ-32B --eval_type trained --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
-python sec_eval.py --output_name qwq-32b --model_name QwQ-32B --eval_type trained-new --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
-python print_results.py --eval_name qwq-32b --eval_type trained-joint --detail
+python print_results.py --eval_name qwq-32b --eval_type trained --detail
 
 python func_eval_gen.py --eval_type human_eval --output_name qwq-32b --model_name QwQ-32B --use-my-reasoner --api-base http://127.0.0.1:9997/v1 --token none --temperature 0.6 --num-samples 48 --max-workers 48
 python print_results.py --eval_name qwq-32b --eval_type human_eval
