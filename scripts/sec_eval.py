@@ -37,6 +37,7 @@ def get_args():
     # MyResoner specific arguments
     parser.add_argument('--use-my-reasoner', action='store_true')
     parser.add_argument('--use-system-prompt', action='store_true')
+    parser.add_argument('--submit-delay-sec', type=float, default=0.1)
     parser.add_argument('--api-base', type=str, default='http://127.0.0.1:9997/v1')
     parser.add_argument('--token', type=str, default='none')
     parser.add_argument('--temperature', type=float, default=0.6)

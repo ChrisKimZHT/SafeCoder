@@ -39,6 +39,7 @@ def get_args():
     # MyResoner specific arguments
     parser.add_argument('--use-my-reasoner', action='store_true')
     parser.add_argument('--use-system-prompt', action='store_true')
+    parser.add_argument('--submit-delay-sec', type=float, default=0.1)
     parser.add_argument('--api-base', type=str, default='http://127.0.0.1:9997/v1')
     parser.add_argument('--token', type=str, default='none')
     parser.add_argument('--temperature', type=float, default=0.6)
@@ -197,12 +198,14 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
         # this is my reasoner specific
         if args.use_my_reasoner:
             with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
-                # futures = [executor.submit(sample_one, client, messages) for _ in range(args.num_samples)]
-                futures = []
-                for _ in range(args.num_samples):
-                    futures.append(executor.submit(sample_one, client, messages))
-                    if len(futures) < args.max_workers:
-                        time.sleep(0.1)
+                if args.submit_delay_sec > 0:
+                    futures = []
+                    for _ in range(args.num_samples):
+                        futures.append(executor.submit(sample_one, client, messages))
+                        if len(futures) < args.max_workers:
+                            time.sleep(args.submit_delay_sec)
+                else:
+                    futures = [executor.submit(sample_one, client, messages) for _ in range(args.num_samples)]
                 with tqdm(total=len(futures), dynamic_ncols=True) as pbar:
                     for future in as_completed(futures):
                         res = future.result()

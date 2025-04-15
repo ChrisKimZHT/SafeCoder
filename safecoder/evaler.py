@@ -4,6 +4,7 @@ import abc
 import openai
 import numpy as np
 import traceback
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
@@ -333,7 +334,14 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
 
         srcs = []
         with ThreadPoolExecutor(max_workers=self.args.max_workers) as executor:
-            futures = [executor.submit(self._sample_one, prompt, info) for _ in range(self.args.num_samples)]
+            if self.args.submit_delay_sec > 0:
+                futures = []
+                for _ in range(self.args.num_samples):
+                    futures.append(executor.submit(self._sample_one, prompt, info))
+                    if len(futures) < self.args.max_workers:
+                        time.sleep(self.args.submit_delay_sec)
+            else:
+                futures = [executor.submit(self._sample_one, prompt, info) for _ in range(self.args.num_samples)]
             with tqdm(total=len(futures), dynamic_ncols=True) as pbar:
                 for future in as_completed(futures):
                     res = future.result()
