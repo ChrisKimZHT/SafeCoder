@@ -7,6 +7,7 @@ import random
 import shutil
 import argparse
 import traceback
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -196,7 +197,12 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
         # this is my reasoner specific
         if args.use_my_reasoner:
             with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
-                futures = [executor.submit(sample_one, client, messages) for _ in range(args.num_samples)]
+                # futures = [executor.submit(sample_one, client, messages) for _ in range(args.num_samples)]
+                futures = []
+                for _ in range(args.num_samples):
+                    futures.append(executor.submit(sample_one, client, messages))
+                    if len(futures) < args.max_workers:
+                        time.sleep(0.1)
                 with tqdm(total=len(futures), dynamic_ncols=True) as pbar:
                     for future in as_completed(futures):
                         res = future.result()
