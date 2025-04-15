@@ -82,7 +82,7 @@ def pass_at_k(n, c, k):
     return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
 
 class FuncEval:
-    K = [1, 5, 10, 25, 50, 100]
+    K = [1, 5, 10, 20]
 
     def __init__(self, eval_dir):
         self.pass_k = [[] for _ in range(len(self.K))]
