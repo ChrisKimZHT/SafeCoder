@@ -266,7 +266,7 @@ The assistant first thinks about the reasoning process in the mind and then prov
 The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively.
 At the same time, please wrap the generated code in markdown code blocks ``` ```.
 i.e., <think> reasoning process here </think><answer> answer here ``` code here ``` </answer>"""
-        self.user_template = "Please complete the code according to the task description and the provided code snippet. You should output the full code in a ``` code block.\n# Task description:\n\n{description}\n\n# Code snippet:\n\n```{language}\n{snippet}\n```"
+        self.user_template = "You will be given a programming task along with an incomplete code snippet. Please design a solution step by step through reasoning and complete the code snippet.\n\nPut your final solution within a single code block:\n```\n<your code here>\n```\n\n# Task:\n\n{description}\n\n# Snippet:\n\n```{language}\n{snippet}\n```"
         self.args = args
         self.model = args.model_name
         self.client = openai.OpenAI(api_key=args.token, base_url=args.api_base)

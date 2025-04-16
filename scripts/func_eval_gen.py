@@ -154,7 +154,7 @@ The assistant first thinks about the reasoning process in the mind and then prov
 The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively.
 At the same time, please wrap the generated code in markdown code blocks ``` ```.
 i.e., <think> reasoning process here </think><answer> answer here ``` code here ``` </answer>"""
-        user_prompt_prefix = "Completing the following function snippet, then output the full code in a ``` code block."
+        user_prompt_prefix = "You will be given an incomplete code snippet. Please design a solution step by step through reasoning and complete the code snippet.\nPut your final solution within a single code block:\n```python\n<your code here>\n```"
 
     else:
         tokenizer, model = load_model(args.model_name, args)
