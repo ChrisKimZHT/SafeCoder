@@ -8,6 +8,7 @@ import shutil
 import argparse
 import traceback
 import time
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -45,6 +46,7 @@ def get_args():
     parser.add_argument('--temperature', type=float, default=0.6)
     parser.add_argument('--max-completion-tokens', type=int, default=16384)
     parser.add_argument("--max-workers", type=int, default=8)
+    parser.add_argument('--dump-messages', action='store_true')
 
     args = parser.parse_args()
 
@@ -112,9 +114,9 @@ def extract_markdown(md):
     matches = re.findall(pattern, md, re.DOTALL)
     return matches
 
-def sample_one(client, messages: list) -> tuple[str, str] | None:
+def sample_one(client, messages: list) -> tuple[str, dict] | None:
     try:
-        _, answer_content = query_model(client, messages)
+        think_content, answer_content = query_model(client, messages)
     except Exception as e:
         print(f"Error querying model: {e}")
         traceback.print_exc()
@@ -131,7 +133,11 @@ def sample_one(client, messages: list) -> tuple[str, str] | None:
 
     code_block = max(code_blocks, key=len)
 
-    return code_block
+    return code_block, {
+        "messages": messages,
+        "think_content": think_content,
+        "answer_content": answer_content
+    }
 
 
 def main():
@@ -197,6 +203,9 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
 
         # this is my reasoner specific
         if args.use_my_reasoner:
+            if args.dump_messages:
+                dump_file = open(output_dir / f"message_dump.jsonl", "w")
+
             with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
                 if args.submit_delay_sec > 0:
                     futures = []
@@ -210,8 +219,14 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
                     for future in as_completed(futures):
                         res = future.result()
                         if res is not None:
-                            problem.completions.append(res)
+                            code_block, complete_content = res
+                            problem.completions.append(code_block)
+                            if args.dump_messages:
+                                dump_file.write(json.dumps(complete_content) + "\n")
                         pbar.update(1)
+
+            if args.dump_messages:
+                dump_file.close()
         else:
             # print(prompt)
             # print('='*150)
