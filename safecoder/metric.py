@@ -1,6 +1,7 @@
 import os
 import yaml
 import json
+import math
 import numpy as np
 from tabulate import tabulate
 from collections import OrderedDict
@@ -78,6 +79,11 @@ class SecEval:
         print(tabulate(table, headers=headers, stralign='right', tablefmt='orgtbl'))
 
 def pass_at_k(n, c, k):
+    if n < k:
+        ratio = math.ceil(k / n)
+        n *= ratio
+        c *= ratio
+
     if n - c < k: return 1.0
     return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
 
