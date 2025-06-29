@@ -306,9 +306,9 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
 
         return think_content, answer_content
 
-    def _sample_one(self, prompt: str, info) -> tuple[str, str] | None:
+    def _sample_one(self, prompt: str, info) -> dict | None:
         try:
-            _, answer_content = self._query_model(prompt)
+            think_content, answer_content = self._query_model(prompt)
         except Exception as e:
             print(f"Error querying model: {e}")
             traceback.print_exc()
@@ -316,23 +316,35 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
 
         if answer_content == "":
             print("Empty answer content")
-            return None
+            return {
+                "code": "",
+                "think": think_content,
+                "answer": answer_content
+            }
 
         code_blocks = self._extract_markdown(answer_content)
         if len(code_blocks) == 0:
             print("No code blocks found")
-            return None
+            return {
+                "code": "",
+                "think": think_content,
+                "answer": answer_content
+            }
 
         code_block = max(code_blocks, key=len)
 
-        return code_block
+        return {
+            "code": code_block,
+            "think": think_content,
+            "answer": answer_content
+        }
 
     def sample(self, file_context, func_context, info):
         lang = info['language']
 
         prompt = self.user_template.format_map({'description': info['description'], 'snippet': file_context + func_context, 'language': lang})
 
-        srcs = []
+        results = []
         with ThreadPoolExecutor(max_workers=self.args.max_workers) as executor:
             if self.args.submit_delay_sec > 0:
                 futures = []
@@ -344,16 +356,19 @@ i.e., <think> reasoning process here </think><answer> answer here ``` code here 
                 futures = [executor.submit(self._sample_one, prompt, info) for _ in range(self.args.num_samples)]
             with tqdm(total=len(futures), dynamic_ncols=True) as pbar:
                 for future in as_completed(futures):
-                    res = future.result()
-                    if res is not None:
-                        srcs.append(res)
+                    results.append(future.result())
                     pbar.update(1)
 
         output_srcs, non_parsed_srcs = [], []
-        for src in srcs:
-            if info['language'] != 'go' and try_parse(src, info) != 0:
-                non_parsed_srcs.append(src)
-            else:
-                output_srcs.append(src)
+        for result in results:
+            if result is None:
+                continue
+            src = result["code"]
 
+            if src == "" or (info['language'] != 'go' and try_parse(src, info) != 0):
+                non_parsed_srcs.append(result)
+            else:
+                output_srcs.append(result)
+
+        # notice: myreasoner returns a dict with {code, think, and answer}, not just the code
         return output_srcs, non_parsed_srcs

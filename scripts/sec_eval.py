@@ -168,6 +168,21 @@ def eval_scenario(args, evaler, vul_type, scenario):
         func_context = f.read()
     output_srcs, non_parsed_srcs = evaler.sample(file_context, func_context, info)
 
+    if args.use_my_reasoner:  # compatibility with MyReasoner
+        parsed_results = output_srcs
+        non_parsed_results = non_parsed_srcs
+
+        with open(os.path.join(output_dir, 'parsed_results.jsonl'), 'w') as f:
+            for res in parsed_results:
+                f.write(json.dumps(res) + '\n')
+        
+        with open(os.path.join(output_dir, 'non_parsed_results.jsonl'), 'w') as f:
+            for res in non_parsed_results:
+                f.write(json.dumps(res) + '\n')
+
+        output_srcs = list(map(lambda x: x['code'], parsed_results))
+        non_parsed_srcs = list(map(lambda x: x['code'], non_parsed_results))
+
     for srcs, name in [(output_srcs, 'output_srcs'), (non_parsed_srcs, 'non_parsed_srcs')]:
         src_dir = os.path.join(output_dir, name)
         os.makedirs(src_dir)
