@@ -46,6 +46,8 @@ def get_args():
 
     args = parser.parse_args()
 
+    args.temp = args.temperature
+
     if not args.use_my_reasoner:
         assert args.num_samples % args.num_samples_per_gen == 0
     if args.model_name in ('octocoder', 'llama2-13b-chat', 'codellama-13b-chat'):
