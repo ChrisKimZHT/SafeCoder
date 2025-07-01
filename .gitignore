@@ -4,6 +4,7 @@
 scripts/-.o
 .DS_Store
 codeql-linux64.zip
+scripts/sec_eval_dump.jsonl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
